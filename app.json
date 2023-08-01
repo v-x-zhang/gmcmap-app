@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "gmcmap-app",
+    "slug": "gmcmap-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash2.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.northerb.gmcmapapp",
+      "config":{
+        "googleMaps":{
+          "apiKey": "AIzaSyA4O-KfJrm2BNs-ax-c_Ve_LdlvJpnUF60"
+        }
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "59906947-bf13-4a92-aab3-71d0a8d8e856"
+      }
+    },
+    "owner": "northerb"
+  }
+}
