@@ -8,7 +8,10 @@ import {
 
 import React, {
   Component, 
-  useState
+  useState,
+  useRef,
+  createRef,
+  useEffect,
 } from 'react';
 
 import MapView from 'react-native-map-clustering';
@@ -26,6 +29,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Alert,
+  Platform,
 } from 'react-native';
 
 import { BottomPopup } from './BottomPopup';
@@ -45,7 +49,7 @@ const deviceWidth = Dimensions.get("window").width
 
 const QUERY_TIMEOUT = 30000;
 
-const CURRENT_BUILD = "v0.0.1";
+const CURRENT_BUILD = "v1.0.0";
 
 var historyPanelRef;
 var realtimePanelRef;
@@ -62,7 +66,7 @@ function App() {
   realtimePanelRef = React.createRef();
   creditsPanelRef = React.createRef();
 
-  const[markerData, setMarkerData] = useState(DEFAULT_MARKERS);
+  const [markerData, setMarkerData] = useState(DEFAULT_MARKERS);
 
   //Define Failure Function
   const fetchFailureAlert = () =>{
@@ -117,7 +121,7 @@ function App() {
       return;
     }
 
-    currentStatusString = "Retrieving Marker Data...";
+    currentStatusString = "Retrieving and Loading Marker Data...";
     popupRef.updateRefreshState(currentStatusString.toString());
 
     dataStringQuery = "https://www.gmcmap.com/app/app_AJAX_getAllDeviceLocations.asp";
@@ -127,6 +131,9 @@ function App() {
       const text3 = await response3.text();
 
       if(text3 != null){
+        currentStatusString = "Data Retrieval Complete. Updating Markers...";
+        popupRef.updateRefreshState(currentStatusString.toString());
+
         var newDataArray = deserializeLocations(text3);
         //Add the new Array onto the current marker one.
       
@@ -145,9 +152,6 @@ function App() {
       popupRef.close();
       return;
     }
-
-    currentStatusString = "Data Retrieval Complete. Updating Markers...";
-    popupRef.updateRefreshState(currentStatusString.toString());
 
     const mergeById = (array1, array2) =>
     array1.map(itm => ({
@@ -226,14 +230,16 @@ function App() {
 
       {/* Center Map Container */}
       <View style={styles.mapContainer}>
-        <MapView style={styles.map} clusterColor='#3383f2' extent = {256} minPoints={10} maxZoom={13} radius={deviceWidth * 0.08}
+        <MapView style={styles.map} clusterColor='#3383f2' extent = {256} minPoints={10} maxZoom={15} radius={deviceWidth * 0.08}
           initialRegion={{
             latitude: 37.78825,
             longitude: -122.4324,
             latitudeDelta: 0.0,
             longitudeDelta: 0.0,
           }}
-          provider={PROVIDER_GOOGLE}>
+          provider={PROVIDER_GOOGLE}
+          // onMapReady={() => setTimeout(() => setMapReady(true), 100)}
+          >
           
 
           {/* Child Markers */}
@@ -290,6 +296,42 @@ function App() {
 }
 
 /**
+ * This function deals with the creation of each marker, styling them and adding
+ * the on click events for each marker and its corresponding info. It takes in an
+ * array of "Marker" Data nodes and returns all of them mapped onto <Marker> objects.
+ * @param {*} markerDataArray The array 
+ * @returns The markers to add.
+ */
+function markersFromData(markerDataArray){
+  trackChanges = Platform.OS === 'android' ? false : true;
+  
+  return markerDataArray.map((markerData) => {
+    return (<Marker
+      key={markerData.key}
+      coordinate={markerData} 
+      onPress={() => showMarkerInfo(markerData)} 
+      tracksInfoWindowChanges={false}
+      tracksViewChanges={trackChanges}
+      anchor={MARKER_ANCHOR}
+      image={markerSource(markerData)}
+    >
+        <View style={styles.markerTextContainer}>
+          {/* <Image
+            source={markerSource(markerData)}
+            style={styles.markerIcon}
+          >
+
+          </Image> */}
+
+          <Text style={styles.markerText} adjustsFontSizeToFit={true} numberOfLines={1}>
+            {markerData.CPM}
+          </Text>
+        </View>
+      </Marker>);
+  })
+};
+
+/**
  * Array helper method for concatenating arrays efficiently.
  * @param {*} other_array 
  */
@@ -326,7 +368,6 @@ function showMarkerInfo(markerData){
     currentStatusString = "Retrieving Marker Data...";
     popupRef.updateRefreshState(currentStatusString.toString());
 
-
     dataStringQuery = "https://www.gmcmap.com/app/app_AJAX_getMarkerData.asp?ID=" + markerData.geigerID;
       
     try{
@@ -362,7 +403,7 @@ function showMarkerInfo(markerData){
     var titleString = markerDataItem.brand;
   
     if(titleString == "unregistered" || titleString == ""){
-      titleString = "Unregistered";
+      titleString = "Undisclosed Model";
     }else{
       titleString += " " + markerDataItem.model;
     }
@@ -452,47 +493,21 @@ function deserializeMarkerData(dataString){
 
   return markerData;
 }
-
 /**
  * Gets the correct icon for the marker depending on its CPM value.
  * 0-50 Green, 50-100 Orange, 100+ Red.
  */
 function markerSource(markerData){
   if(markerData.CPM < 50){
-    return require('./resources/markers/green-marker-dark.png');
+    return require('./resources/25pxmarkers/green-marker-dark.png');
   }
   else if(markerData.CPM < 100){
-    return require('./resources/markers/orange-marker-dark.png');
+    return require('./resources/25pxmarkers/orange-marker-dark.png');
   }
   else{
-    return require('./resources/markers/red-marker-dark.png');
+    return require('./resources/25pxmarkers/red-marker-dark.png');
   }
 }
-
-/**
- * This function deals with the creation of each marker, styling them and adding
- * the on click events for each marker and its corresponding info. It takes in an
- * array of "Marker" Data nodes and returns all of them mapped onto <Marker> objects.
- * @param {*} markerDataArray The array 
- * @returns The markers to add.
- */
-function markersFromData(markerDataArray){
-  markerMap = markerDataArray.map((markerData) => {
-    return <Marker 
-      key = {markerData.key}
-      coordinate={markerData} 
-      onPress={() => showMarkerInfo(markerData)} 
-      anchor={MARKER_ANCHOR}
-      image = {markerSource(markerData)}
-    >
-      <View style={styles.markerTextContainer}>
-        <Text style={styles.markerText} adjustsFontSizeToFit={true} numberOfLines={1}>{markerData.CPM}</Text>
-      </View>
-    </Marker>
-  })
-
-  return markerMap;
-};
 
 //TODO: Write Comments
 function deserializeCPMs(dataString){
@@ -657,8 +672,15 @@ var styles = StyleSheet.create({
     height: 25,
   },
   markerText:{
+    position: 'absolute',
     maxWidth: 20,
     color: '#FFFFFF',
+  },
+  markerIcon:{
+    width: 25,
+    height: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

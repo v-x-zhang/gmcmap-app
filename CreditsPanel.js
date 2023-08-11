@@ -73,7 +73,7 @@ export class CreditsPanel extends React.Component{
             <View style={styles.modalContentContainer}>
                 <Text style={styles.contentText}>This app is currently undergoing MAJOR DEVELOPMENT.</Text>
 
-                <Text style={styles.contentText}>Visit www.gmcmap.com for full, expanded functionality.</Text>
+                <Text style={styles.contentText}>Visit the GMCMap Website for full, expanded functionality.</Text>
 
                 <Text style={styles.contentText}>Developed By: Vincent Zhang</Text>
             </View>
@@ -106,7 +106,7 @@ var styles = StyleSheet.create({
     panelContainer:{
         backgroundColor: '#FFFFFF',
         width: '100%',
-        justifyContent: 'flex-end',
+        justifyContent: 'center',
         alignItems: 'center',
         // alignContent: 'center',
         maxHeight: deviceHeight,

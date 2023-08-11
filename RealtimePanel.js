@@ -441,7 +441,7 @@ var styles = StyleSheet.create({
     panelContainer:{
         backgroundColor: '#FFFFFF',
         width: '100%',
-        justifyContent: 'flex-end',
+        justifyContent: 'center',
         alignItems: 'center',
         // alignContent: 'center',
         maxHeight: deviceHeight,
@@ -451,7 +451,6 @@ var styles = StyleSheet.create({
         backgroundColor: '#e6f2ff',
         height: deviceHeight,
         borderRadius: 50,
-        marginBottom: 20,
         maxHeight: deviceHeight * .9,
     },
     modalContentContainer:{
