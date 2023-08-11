@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "gmcmap-app",
+    "name": "GMCMap",
     "slug": "gmcmap-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,7 +15,12 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gqelectronicsllc.gmcmap",
+      "buildNumber": "3",
+      "config": {
+        "googleMapsApiKey": "AIzaSyA4O-KfJrm2BNs-ax-c_Ve_LdlvJpnUF60"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,8 +28,8 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.northerb.gmcmapapp",
-      "config":{
-        "googleMaps":{
+      "config": {
+        "googleMaps": {
           "apiKey": "AIzaSyA4O-KfJrm2BNs-ax-c_Ve_LdlvJpnUF60"
         }
       }

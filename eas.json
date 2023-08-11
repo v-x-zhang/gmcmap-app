@@ -10,7 +10,11 @@
     },
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "ios":{
+        "simulator": true,
+        "resourceClass": "m1-medium"
+      }
     },
     "preview": {
       "android": {
@@ -28,6 +32,12 @@
     "production": {}
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "limin.zhang@mcumall.com", 
+        "ascAppId": "6459882680",
+        "appleTeamId": "YS85DSJ2DG"
+      }
+    }
   }
 }
