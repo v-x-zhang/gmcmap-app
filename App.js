@@ -32,10 +32,14 @@ import {
   Platform,
 } from 'react-native';
 
+import * as SecureStore from 'expo-secure-store';
+
 import { BottomPopup } from './BottomPopup';
 import { HistoryPanel } from './HistoryPanel';
 import { RealtimePanel } from './RealtimePanel';
-import { CreditsPanel } from './CreditsPanel';
+import { RealtimePanel_r } from './RealtimePanel_r';
+import { SettingsPanel } from './SettingsPanel';
+
 
 //Whether or not we are starting up, switches off on first data refresh.
 var startupFlag = 1;
@@ -45,16 +49,20 @@ const DEFAULT_MARKERS = [];
 
 const MARKER_ANCHOR = {x: 0.5,y: 0.5};
 
-const deviceWidth = Dimensions.get("window").width
+const deviceWidth = Dimensions.get("window").width;
 
 const QUERY_TIMEOUT = 30000;
 
-const CURRENT_BUILD = "v1.0.1";
+const CURRENT_BUILD = "v1.0.2";
 
 var historyPanelRef;
 var realtimePanelRef;
-var creditsPanelRef;
+var realtimePanelRef_r;
+var settingsPanelRef;
 var popupRef;
+
+var currentMapTitleText = "GMCMap";
+var currentMap = 1; //1 = GMC, 2 = Radon
 
 /**
  * This function acts as the Update() of the app, executing on runtime.
@@ -64,9 +72,40 @@ function App() {
   popupRef = React.createRef();
   historyPanelRef = React.createRef();
   realtimePanelRef = React.createRef();
-  creditsPanelRef = React.createRef();
+  realtimePanelRef_r = React.createRef();
+  settingsPanelRef = React.createRef();
 
   const [markerData, setMarkerData] = useState(DEFAULT_MARKERS);
+  const [currentMarkerSize, setMarkerSize] = useState(2);
+  const [currentTimeZone, setTimeZone] = useState(0);
+  const [initialRegion, setInitialRegion] = useState({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 20.0,
+    longitudeDelta: 20.0,
+  });
+
+  const checkForUpdates = async () =>{
+    var dataStringQuery = "https://www.gmcmap.com/app/app_Current_Build.asp";
+
+    const response = await fetchWithTimeout(dataStringQuery, {timeout : 6000})
+    const text = await response.text();
+
+    if(text != CURRENT_BUILD){
+      Alert.alert(
+        "Application Update",
+        "There is a new update! Please visit the app store to download the new update.",
+        [{text: 'Close'}],
+        {cancelable: true}
+      );
+    }else if(text == null){
+      Alert.alert(
+        "Connection Failed", 
+        "Unable to check for updates.", 
+        [{text: 'Close'}], 
+        {cancelable: true});
+    }
+  }
 
   //Define Failure Function
   const fetchFailureAlert = () =>{
@@ -87,6 +126,8 @@ function App() {
   }
 
   const dataClickHandler = async () => {
+    setMarkerData(DEFAULT_MARKERS);
+
     //Show Pop Up
     popupRef.show()
 
@@ -96,7 +137,11 @@ function App() {
     var cpmArray = [];
     var locationArray = [];
 
-    dataStringQuery = "https://www.gmcmap.com/app/app_AJAX_getAllCPMActive.asp";  
+    if(currentMap == 1){
+      dataStringQuery = "https://www.gmcmap.com/app/app_AJAX_getAllCPMActive.asp";  
+    }else{
+      dataStringQuery = "https://www.gmcmap.com/app/app_AJAX_getAllCPMActive_r.asp";  
+    }
 
     try{
       const response2 = await fetchWithTimeout(dataStringQuery, {timeout: QUERY_TIMEOUT});
@@ -107,7 +152,7 @@ function App() {
   
         cpmArray = newDataArray;
         
-        console.log("Retrieved Marker CPMs.");
+        console.log("Received Marker CPMs.");
 
       }else{
         parseFailureAlert();
@@ -124,7 +169,11 @@ function App() {
     currentStatusString = "Retrieving and Loading Marker Data...";
     popupRef.updateRefreshState(currentStatusString.toString());
 
-    dataStringQuery = "https://www.gmcmap.com/app/app_AJAX_getAllDeviceLocations.asp";
+    if(currentMap == 1){
+      dataStringQuery = "https://www.gmcmap.com/app/app_AJAX_getAllDeviceLocations.asp";
+    }else{
+      dataStringQuery = "https://www.gmcmap.com/app/app_AJAX_getAllDeviceLocations_r.asp";
+    }
 
     try{
       const response3 = await fetchWithTimeout(dataStringQuery, {timeout: QUERY_TIMEOUT});
@@ -139,7 +188,7 @@ function App() {
       
         locationArray = newDataArray;
       
-        console.log("Retrieved Marker Locations.");
+        console.log("Received Marker Locations.");
 
       }else{
         parseFailureAlert();
@@ -195,8 +244,33 @@ function App() {
       {cancelable: true});
   }
 
-  const aboutOnClick = () =>{
-    creditsPanelRef.show();
+  const settingsOnClick = () =>{
+    settingsPanelRef.show();
+  }
+
+  const radonOnClick = () =>{
+    if(currentMap == 2) return;
+
+    currentMap = 2;
+    currentMapTitleText = "RadonMap";
+
+    setMarkerData(DEFAULT_MARKERS);
+    dataClickHandler();
+  }
+
+  const GMCOnClick = () =>{
+    if(currentMap == 1) return;
+
+    currentMap = 1;
+    currentMapTitleText = "GMCMap";
+
+    setMarkerData(DEFAULT_MARKERS);
+    dataClickHandler();
+  }
+
+  const onCloseSettings = () =>{
+    waitForMarkerSize();
+    waitForTimeZone();
   }
 
   const waitForElement = () =>{
@@ -208,9 +282,39 @@ function App() {
     }
   }
 
+  const moveToLastLocation = async () =>{
+    var lastLocation = await getLastLocation();
+
+    // console.log(lastLocation);
+    
+    setInitialRegion(lastLocation)
+  }
+
+  const waitForMarkerSize = async () =>{
+    var currentMarkerSize = await getValueFor('marker-size');
+    setMarkerSize(currentMarkerSize);
+  }
+
+  const waitForTimeZone = async () =>{
+    var currentTimeZone = await getTimeZone('time-zone-offset');
+    setTimeZone(currentTimeZone);
+  }
+
+  const regionChangeCallback = (e)=>{
+    saveLastLocation(e);
+  }
+
   //First Frame Run Refresh
   if(startupFlag == 1){
     startupFlag = 0;
+
+    checkForUpdates();
+
+    //Load Default Settings
+    waitForMarkerSize();
+    waitForTimeZone();
+
+    moveToLastLocation();
 
     waitForElement();
   }
@@ -223,7 +327,7 @@ function App() {
           <Image source={require('./resources/refresh-icon2.png')} style = {styles.refreshIcon}/>
         </TouchableOpacity>
 
-        <Text style={styles.headerText}>GMCMap</Text>
+        <Text style={styles.headerText}>{currentMapTitleText}</Text>
         <Text style={styles.buildText}>{CURRENT_BUILD}</Text>
       </View>
 
@@ -231,19 +335,15 @@ function App() {
       {/* Center Map Container */}
       <View style={styles.mapContainer}>
         <MapView style={styles.map} clusterColor='#3383f2' extent = {256} minPoints={10} maxZoom={15} radius={deviceWidth * 0.08}
-          initialRegion={{
-            latitude: 37.78825,
-            longitude: -122.4324,
-            latitudeDelta: 0.0,
-            longitudeDelta: 0.0,
-          }}
+          region={initialRegion}
           provider={PROVIDER_GOOGLE}
+          onRegionChangeComplete={(e) => regionChangeCallback(e)}
           // onMapReady={() => setTimeout(() => setMapReady(true), 100)}
           >
           
 
           {/* Child Markers */}
-          {markersFromData(markerData)}
+          {markersFromData(markerData, currentMarkerSize, currentTimeZone)}
         </MapView>
       </View>
 
@@ -252,13 +352,17 @@ function App() {
         {/* <Image source={require('.aS/resources/GMCMap-Logo-Ver3-Transparent.png')} style = {styles.logoIcon}/> */}
 
         {/* <Text>Copyright @ 2023 GQ Electronics LLC. All Rights Reserved.</Text> */}
+    
+        {radonButton(currentMap, radonOnClick)}
+        
+        {gmcButton(currentMap, GMCOnClick)}
 
         <View style={{flexDirection:'column', justifyContent:'center', alignContent:'center'}}>
-          <TouchableOpacity onPress={aboutOnClick} style ={styles.aboutButton}>
-            <Image source={require('./resources/about-icon.png')} style = {styles.aboutIcon}/>
+          <TouchableOpacity onPress={settingsOnClick} style ={styles.aboutButton}>
+            <Image source={require('./resources/settings-icon-2.png')} style = {styles.aboutIcon}/>
           </TouchableOpacity>
 
-          <Text style={{alignSelf:'center'}}>About</Text>
+          <Text style={{alignSelf:'center'}}>Settings</Text>
         </View>
       </View>
 
@@ -285,14 +389,123 @@ function App() {
 
       </RealtimePanel>
 
-      <CreditsPanel
-        ref={(target) => creditsPanelRef = target}
-        title="About"
+      <RealtimePanel_r
+        ref={(target) => realtimePanelRef_r = target}
+        title = "Real-Time Data"
       >
 
-      </CreditsPanel>
+      </RealtimePanel_r>
+
+      <SettingsPanel
+        ref={(target) => settingsPanelRef = target}
+        onClose={onCloseSettings}
+        title="Settings"
+      >
+
+      </SettingsPanel>
     </View>
   );
+}
+
+function radonButton(currentMap, radonOnClick){
+  if(currentMap == 1){
+    return(
+      <View style={{flexDirection:'column', justifyContent:'center', alignContent:'center'}}>
+        <TouchableOpacity disabled={false} onPress={radonOnClick} style ={styles.aboutButton}>
+          <Image source={require('./resources/radon-icon.png')} style = {styles.aboutIcon}/>
+        </TouchableOpacity>
+
+        <Text style={{alignSelf:'center', color:'#000000'}}>Radon</Text>
+      </View>
+    )
+  }else{
+    return(
+      <View style={{flexDirection:'column', justifyContent:'center', alignContent:'center'}}>
+        <TouchableOpacity disabled={true} onPress={radonOnClick} style ={styles.aboutButton}>
+          <Image source={require('./resources/radon-selected-icon.png')} style = {styles.aboutIcon}/>
+        </TouchableOpacity>
+
+        <Text style={{alignSelf:'center', color:'#5fb3fd'}}>Radon</Text>
+      </View>
+    )
+  }
+}
+
+function gmcButton(currentMap, GMCOnClick){
+  if(currentMap == 1){
+    return(
+      <View style={{flexDirection:'column', justifyContent:'center', alignContent:'center'}}>
+        <TouchableOpacity disabled={true} onPress={GMCOnClick} style ={styles.aboutButton}>
+          <Image source={require('./resources/gmc-icon-selected.png')}  style = {styles.aboutIcon}/>
+        </TouchableOpacity>
+
+        <Text style={{alignSelf:'center', color:'#5fb3fd'}}>GMC</Text>
+      </View>
+    )
+  }else{
+    return(
+      <View style={{flexDirection:'column', justifyContent:'center', alignContent:'center'}}>
+        <TouchableOpacity disabled={false} onPress={GMCOnClick} style ={styles.aboutButton}>
+          <Image source={require('./resources/gmc-icon.png')}  style = {styles.aboutIcon}/>
+        </TouchableOpacity>
+
+        <Text style={{alignSelf:'center', color:'#000000'}}>GMC</Text>
+      </View>
+    )
+  }
+}
+
+async function getValueFor(key, currentMarkerSize) {
+  let result = await SecureStore.getItemAsync(key);
+  if (result) {
+    if(currentMarkerSize != Number(result)){
+      currentMarkerSize = Number(result);
+    }
+    // console.log("marker size = " + JSON.stringify(currentMarkerSize));
+    return result;
+  } else {
+    return null;
+  }
+}
+
+async function getLastLocation(){
+  let lat = await SecureStore.getItemAsync('lat');
+  let long = await SecureStore.getItemAsync('long');
+  let latDelta = await SecureStore.getItemAsync('latDelta');
+  let longDelta = await SecureStore.getItemAsync('longDelta');
+
+  if(lat == undefined || long == undefined || latDelta == undefined || longDelta == undefined){
+    return null;
+  }else{
+    return {
+      latitude: Number(lat),
+      latitudeDelta: Number(latDelta),
+      longitude: Number(long),
+      longitudeDelta: Number(longDelta)
+    }
+  }
+}
+
+async function saveLastLocation(location){
+  await SecureStore.setItemAsync('lat', location.latitude.toString());
+  await SecureStore.setItemAsync('latDelta', location.latitudeDelta.toString());
+  await SecureStore.setItemAsync('long', location.longitude.toString());
+  await SecureStore.setItemAsync('longDelta', location.longitudeDelta.toString());
+
+  // console.log("Saved Location Data");
+}
+
+async function getTimeZone(key, currentTimeZone){
+  let result = await SecureStore.getItemAsync(key);
+  if (result) {
+    if(currentTimeZone != Number(result)){
+      currentTimeZone = Number(result);
+    }
+    // console.log("marker size = " + JSON.stringify(currentMarkerSize));
+    return result;
+  } else {
+    return null;
+  }
 }
 
 /**
@@ -302,32 +515,22 @@ function App() {
  * @param {*} markerDataArray The array 
  * @returns The markers to add.
  */
-function markersFromData(markerDataArray){
+function markersFromData(markerDataArray, currentMarkerSize, currentTimeZone){
   trackChanges = Platform.OS === 'android' ? false : true;
   
   return markerDataArray.map((markerData) => {
     return (<Marker
       key={markerData.key}
       coordinate={markerData} 
-      onPress={() => showMarkerInfo(markerData)} 
+      onPress={() => showMarkerInfo(markerData, currentTimeZone)} 
       tracksInfoWindowChanges={false}
       tracksViewChanges={trackChanges}
       anchor={MARKER_ANCHOR}
-      image={markerSource(markerData)}
+      image={markerSource(markerData, currentMarkerSize)}
     >
-        <View style={styles.markerTextContainer}>
-          {/* <Image
-            source={markerSource(markerData)}
-            style={styles.markerIcon}
-          >
+      {textSource(markerData.CPM, currentMarkerSize)}
 
-          </Image> */}
-
-          <Text style={styles.markerText} adjustsFontSizeToFit={true} numberOfLines={1}>
-            {markerData.CPM}
-          </Text>
-        </View>
-      </Marker>);
+    </Marker>);
   })
 };
 
@@ -359,7 +562,7 @@ async function fetchWithTimeout(resource, options = {}) {
  * The OnClickEvent for a marker, generating an alert dialogue with the marker's data.
  * Dynamically Changes based on what information was provided for the marker
  */
-function showMarkerInfo(markerData){
+function showMarkerInfo(markerData, currentTimeZone){
   let markerDataItem = {};
 
   const dataHandler = async () => {
@@ -368,14 +571,23 @@ function showMarkerInfo(markerData){
     currentStatusString = "Retrieving Marker Data...";
     popupRef.updateRefreshState(currentStatusString.toString());
 
-    dataStringQuery = "https://www.gmcmap.com/app/app_AJAX_getMarkerData.asp?ID=" + markerData.geigerID;
+    if(currentMap == 1){
+      dataStringQuery = "https://www.gmcmap.com/app/app_AJAX_getMarkerData.asp?ID=" + markerData.geigerID;
+    }else{
+      dataStringQuery = "https://www.gmcmap.com/app/app_AJAX_getMarkerData_r.asp?ID=" + markerData.geigerID;
+    }
       
     try{
       const response = await fetchWithTimeout(dataStringQuery, {timeout: QUERY_TIMEOUT});
       const text = await response.text();
 
       if(text != null){
-        markerDataItem = deserializeMarkerData(text);
+
+        if(currentMap == 1){
+          markerDataItem = deserializeMarkerData(text);
+        }else{
+          markerDataItem = deserializeMarkerData_r(text);
+        }
       
         console.log("Retrieved Marker Data.");
       }else{
@@ -400,45 +612,73 @@ function showMarkerInfo(markerData){
       return;
     }
     
-    var titleString = markerDataItem.brand;
+    if(currentMap == 1){
+      var titleString = markerDataItem.brand;
   
-    if(titleString == "unregistered" || titleString == ""){
-      titleString = "Undisclosed Model";
-    }else{
-      titleString += " " + markerDataItem.model;
+      if(titleString == "unregistered" || titleString == ""){
+        titleString = "Undisclosed Model";
+      }else{
+        titleString += " " + markerDataItem.model;
+      }
+  
+      var infoString = "CPM - " + markerData.CPM;
+      infoString += "\n";
+      
+      if(markerDataItem.ACPM != 0){
+        infoString += "ACPM - " + markerDataItem.ACPM;
+        infoString += "\n";
+      }
+  
+      if(markerDataItem.uSv != 0){
+        infoString += "uSV - " + markerDataItem.uSv;
+        infoString += "\n";
+      }
+  
+      infoString += "\n";
+  
+      if(markerDataItem.author != ""){
+        infoString += "By: " + markerDataItem.author;
+      }else{
+        infoString += "By: Anonymous";
+      }
+  
+      // if(markerDataItem.date != ""){
+      //   infoString += markerDataItem.date;
+      // }
+    }
+    else
+    {
+      //Radon Info
+      var titleString = markerDataItem.brand;
+  
+      if(titleString == "unregistered" || titleString == ""){
+        titleString = "Undisclosed Model";
+      }else{
+        titleString += " " + markerDataItem.model;
+      }
+  
+      var infoString = "pCi/L - " + markerData.CPM;
+      infoString += "\n";
+      
+      if(markerDataItem.bq != 0){
+        infoString += "Bq - " + markerDataItem.bq;
+        infoString += "\n";
+      }
+      infoString += "\n";
+  
+      if(markerDataItem.author != ""){
+        infoString += "By: " + markerDataItem.author;
+      }else{
+        infoString += "By: Anonymous";
+      }
+  
+      // if(markerDataItem.date != ""){
+      //   infoString += markerDataItem.date;
+      // }
     }
 
-    var infoString = "CPM - " + markerData.CPM;
-    infoString += "\n";
-    
-    if(markerDataItem.ACPM != 0){
-      infoString += "ACPM - " + markerDataItem.ACPM;
-      infoString += "\n";
-    }
-
-    if(markerDataItem.uSv != 0){
-      infoString += "uSV - " + markerDataItem.uSv;
-      infoString += "\n";
-    }
-
-    infoString += "\n";
-
-    if(markerDataItem.author != ""){
-      infoString += "By: " + markerDataItem.author;
-      infoString += "\n";
-      infoString += "\n";
-    }else{
-      infoString += "By: Anonymous";
-      infoString += "\n";
-      infoString += "\n";
-    }
-
-    if(markerDataItem.date != ""){
-      infoString += markerDataItem.date;
-    }
     popupRef.close();
-
-    Alert.alert(titleString, infoString, getMarkerButtons(markerDataItem, markerData.geigerID), {cancelable: true});
+    Alert.alert(titleString, infoString, getMarkerButtons(markerDataItem, markerData.geigerID, currentTimeZone), {cancelable: true});
   }
 
   dataHandler();
@@ -450,14 +690,15 @@ function showMarkerInfo(markerData){
  * @param {*} markerDataItem The marker data node
  * @returns the array of buttons
  */
-function getMarkerButtons(markerDataItem, geigerID){
+function getMarkerButtons(markerDataItem, geigerID, currentTimeZone){
   var buttons = [];
 
-  console.log(markerDataItem.historyData);
+  // console.log(markerDataItem.historyData);
 
   if(markerDataItem.historyData == "YES"){
     const historyOnPress = () =>{
       historyPanelRef.updateRefreshState(geigerID);
+      historyPanelRef.updateTimeZone(currentTimeZone);
       historyPanelRef.show();
     }
 
@@ -469,8 +710,19 @@ function getMarkerButtons(markerDataItem, geigerID){
     realtimePanelRef.updateModelState(markerDataItem.model);
     realtimePanelRef.show();
   }
+
+  const realtimeOnPress_r = () =>{
+    realtimePanelRef_r.updateRefreshState(geigerID);
+    realtimePanelRef_r.updateModelState(markerDataItem.model);
+    realtimePanelRef_r.show();
+  }
   
-  buttons.push({text: 'Real-Time Data', onPress: () => realtimeOnPress()})
+  if(currentMap == 1){
+    buttons.push({text: 'Real-Time Data', onPress: () => realtimeOnPress()})
+  }else{
+    buttons.push({text: 'Real-Time Data', onPress: () => realtimeOnPress_r()})
+  }
+
   // buttons.push({text: 'Contact'})
 
   buttons.push({text: 'Close'});
@@ -493,19 +745,154 @@ function deserializeMarkerData(dataString){
 
   return markerData;
 }
+
+function deserializeMarkerData_r(dataString){
+  const varArray = dataString.split("#STRONGHASH#");
+
+  let markerData = {
+    "brand": varArray[0],
+    "model": varArray[1],
+    "bq": varArray[2],
+    "author": varArray[3],
+    "date": varArray[4],
+    "historyData": varArray[5],
+  }
+
+  return markerData;
+}
+
+function textSource(markerDataCPM, currentMarkerSize){
+
+  if(currentMarkerSize == 1){
+    return (
+      <View style={styles.smallMarkerTextContainer}>
+        <Text style={styles.smallMarkerText} adjustsFontSizeToFit={true} numberOfLines={1}>
+          {markerDataCPM}
+        </Text>
+      </View>
+    )
+  }else if(currentMarkerSize == 2){
+    return (
+      <View style={styles.mediumMarkerTextContainer}>
+        <Text style={styles.mediumMarkerText} adjustsFontSizeToFit={true} numberOfLines={1}>
+          {markerDataCPM}
+        </Text>
+      </View>
+    )
+  }else if(currentMarkerSize == 3){
+    return (
+      <View style={styles.largeMarkerTextContainer}>
+        <Text style={styles.largeMarkerText} adjustsFontSizeToFit={true} numberOfLines={1}>
+          {markerDataCPM}
+        </Text>
+      </View>
+    )
+  }else{
+    return (
+      <View style={styles.mediumMarkerTextContainer}>
+        <Text style={styles.mediumMarkerText} adjustsFontSizeToFit={true} numberOfLines={1}>
+          {markerDataCPM}
+        </Text>
+      </View>
+    )
+  }
+}
+
 /**
  * Gets the correct icon for the marker depending on its CPM value.
  * 0-50 Green, 50-100 Orange, 100+ Red.
  */
-function markerSource(markerData){
-  if(markerData.CPM < 50){
-    return require('./resources/25pxmarkers/green-marker-dark.png');
+function markerSource(markerData, currentMarkerSize){
+  if(currentMarkerSize == 1){
+    if(currentMap == 1){//GMC
+      if(markerData.CPM < 50){
+        return require('./resources/25pxmarkers/green-marker-dark.png');
+      }
+      else if(markerData.CPM < 100){
+        return require('./resources/25pxmarkers/orange-marker-dark.png');
+      }
+      else{
+        return require('./resources/25pxmarkers/red-marker-dark.png');
+      }
+    }else{//Radon
+      if(markerData.CPM < 4){
+        return require('./resources/25pxmarkers/blue-marker-dark.png');
+      }
+      else if(markerData.CPM < 10){
+        return require('./resources/25pxmarkers/orange-marker-dark.png');
+      }
+      else{
+        return require('./resources/25pxmarkers/red-marker-dark.png');
+      }
+    }
   }
-  else if(markerData.CPM < 100){
-    return require('./resources/25pxmarkers/orange-marker-dark.png');
+  else if(currentMarkerSize == 2){
+    if(currentMap == 1){//GMC
+      if(markerData.CPM < 50){
+        return require('./resources/38pxmarkers/green-marker-dark.png');
+      }
+      else if(markerData.CPM < 100){
+        return require('./resources/38pxmarkers/orange-marker-dark.png');
+      }
+      else{
+        return require('./resources/38pxmarkers/red-marker-dark.png');
+      }
+    }else{//Radon
+      if(markerData.CPM < 4){
+        return require('./resources/38pxmarkers/blue-marker-dark.png');
+      }
+      else if(markerData.CPM < 10){
+        return require('./resources/38pxmarkers/orange-marker-dark.png');
+      }
+      else{
+        return require('./resources/38pxmarkers/red-marker-dark.png');
+      }
+    }
   }
-  else{
-    return require('./resources/25pxmarkers/red-marker-dark.png');
+  else if(currentMarkerSize == 3){
+    if(currentMap == 1){//GMC
+      if(markerData.CPM < 50){
+        return require('./resources/50pxmarkers/green-marker-dark.png');
+      }
+      else if(markerData.CPM < 100){
+        return require('./resources/50pxmarkers/orange-marker-dark.png');
+      }
+      else{
+        return require('./resources/50pxmarkers/red-marker-dark.png');
+      }
+    }else{//Radon
+      if(markerData.CPM < 4){
+        return require('./resources/50pxmarkers/blue-marker-dark.png');
+      }
+      else if(markerData.CPM < 10){
+        return require('./resources/50pxmarkers/orange-marker-dark.png');
+      }
+      else{
+        return require('./resources/50pxmarkers/red-marker-dark.png');
+      }
+    }
+  }else{
+    if(currentMap == 1){//GMC
+      if(markerData.CPM < 50){
+        return require('./resources/38pxmarkers/green-marker-dark.png');
+      }
+      else if(markerData.CPM < 100){
+        return require('./resources/38pxmarkers/orange-marker-dark.png');
+      }
+      else{
+        return require('./resources/38pxmarkers/red-marker-dark.png');
+      }
+    }else{//Radon
+      if(markerData.CPM < 4){
+        return require('./resources/38pxmarkers/blue-marker-dark.png');
+      }
+      else if(markerData.CPM < 10){
+        return require('./resources/38pxmarkers/orange-marker-dark.png');
+      }
+      else{
+        return require('./resources/38pxmarkers/red-marker-dark.png');
+      }
+    }
   }
 }
 
@@ -616,7 +1003,7 @@ var styles = StyleSheet.create({
   },
   bottomContainer:{
     flex: 2,
-    justifyContent: 'center',
+    justifyContent: 'space-evenly',
     alignItems: 'flex-start',
     flexDirection: 'row',
   },
@@ -662,7 +1049,7 @@ var styles = StyleSheet.create({
     height: 30,
     width: 30,
   },
-  markerTextContainer:{
+  smallMarkerTextContainer:{
     flex: 1,
 
     justifyContent: 'center',
@@ -671,10 +1058,44 @@ var styles = StyleSheet.create({
     width: 25,
     height: 25,
   },
-  markerText:{
+  mediumMarkerTextContainer:{
+    flex: 1,
+
+    justifyContent: 'center',
+    alignItems: 'center',
+    
+    width: 38,
+    height: 38,
+  },
+  largeMarkerTextContainer:{
+    flex: 1,
+
+    justifyContent: 'center',
+    alignItems: 'center',
+    
+    width: 50,
+    height: 50,
+  },
+  smallMarkerText:{
     position: 'absolute',
-    maxWidth: 20,
     color: '#FFFFFF',
+    
+    maxWidth: 18,
+    maxHeight: 25,
+  },
+  mediumMarkerText:{
+    position: 'absolute',
+    color: '#FFFFFF',
+    
+    maxWidth: 27,
+    maxHeight: 38,
+  },
+  largeMarkerText:{
+    position: 'absolute',
+    color: '#FFFFFF',
+    
+    maxWidth: 36,
+    maxHeight: 50,
   },
   markerIcon:{
     width: 25,

@@ -10,6 +10,10 @@ import{
     Alert,
 } from 'react-native';
 
+import { 
+    Image 
+} from 'expo-image';
+
 import React from 'react';
 
 const deviceHeight = Dimensions.get("window").height
@@ -26,7 +30,7 @@ const DEFAULT_DATA = {
 //Data Refresh Time
 const REFRESH_TIME = 60; //1 Minutes
 
-const QUERY_TIMEOUT = 30000;//6 Seconds
+const QUERY_TIMEOUT = 30000; //6 Seconds
 
 var dataFlag = 0;
 
@@ -301,10 +305,12 @@ export class RealtimePanel extends React.Component{
             return (
                 <View style={styles.modalContentContainer}>
                     {this.renderCPM(currentData.CPM)}
+                    
+                    {this.renderSeperator()}
 
-                    {this.renderACPM(currentData.ACPM)}
+                    {this.renderACPM(currentData.ACPM, currentData.uSv)}
 
-                    {this.renderUSV(currentData.uSv)}
+                    {this.renderSeperator()}
 
                     {this.renderAuthor(currentData.author)}
                     
@@ -318,79 +324,88 @@ export class RealtimePanel extends React.Component{
         if(currentCPM == 0){
             return;
         }
-        
-        var correctColor;
+
+        return(
+            <View style={styles.cpmContainer}>
+                <View style={{flexDirection: 'row', justifyContent: 'center', alignContent: 'center', alignItems: 'center'}}>
+                    <Text style={{fontSize: 100, fontWeight: 'bold'}}>
+                        {currentCPM}
+                    </Text>
+
+                    <Text style={styles.cpmText}>
+                        CPM
+                    </Text>
+                </View>
+
+                {/* {currentCPM < 50 
+                    ? <Image source={require('./resources/normal-level-gmc.png')} style = {styles.safetyLevelImage}/>
+                    : currentCPM < 100 
+                    ? <Image source={require('./resources/warning-level-gmc.png')} style = {styles.safetyLevelImage}/>
+                    : <Image source={require('./resources/unsafe-level-gmc.png')} style = {styles.safetyLevelImage}/>
+                }    */}
+            </View>
+        )
+    }
+
+    renderSafetyLevel = (currentCPM) =>{
+        if(currentCPM == 0){
+            return;
+        }
 
         if(currentCPM < 50){
-            correctColor = "#00b300";
+            return(
+                <Image source={require('./resources/normal-level-gmc.png')} style = {styles.safetyLevelImage}/>
+            )
+        }else if (currentCPM < 100){
+            return(
+                <Image source={require('./resources/warning-level-gmc.png')} style = {styles.safetyLevelImage}/>
+            )
+        }else{
+            return(
+                <Image source={require('./resources/unsafe-level-gmc.png')} style = {styles.safetyLevelImage}/>
+            )
         }
-        else if(currentCPM < 100){
-            correctColor = "#b3b300";
-        }
-        else{
-            correctColor = "#990000";
-        }
-
-        return(
-            <View style={styles.dataContainer}>
-                <Text style={styles.dataHeader}>
-                    Current CPM
-                </Text>
-
-                <Text 
-                    style={{color: correctColor, fontSize: 40, fontWeight: 'bold'}}
-                >
-                    {currentCPM}
-                </Text>
-            </View>
-        )
     }
 
-    renderACPM = (currentACPM) =>{
-        if(currentACPM == 0){
-            return;
+    renderACPM = (currentACPMm, currentuSv) =>{
+        var finalCurrentACPM = currentACPMm;
+        var finalCurrentuSv = currentuSv;
+
+        if(finalCurrentACPM == 0){
+            finalCurrentACPM = "N/A";
+        }else{
+            finalCurrentACPM = Number(finalCurrentACPM);
         }
-
-        var correctColor;
-
-        if(currentACPM < 50){
-            correctColor = "#00b300";
-        }
-        else if(currentACPM < 100){
-            correctColor = "#b3b300";
-        }
-        else{
-            correctColor = "#990000";
-        }
-
-
-        return(
-            <View style={styles.dataContainer}>
-                <Text style={styles.dataHeader}>
-                    Average CPM
-                </Text>
-
-                <Text style={{color: correctColor, fontSize: 40, fontWeight: 'bold'}}>
-                    {currentACPM}
-                </Text>
-            </View>
-        )
-    }
-
-    renderUSV = (currentuSv) =>{
-        if(currentuSv == 0){
-            return;
+        
+        if(finalCurrentuSv == 0){
+            finalCurrentuSv = "N/A";
+        }else{
+            finalCurrentuSv = Number(finalCurrentuSv);
         }
 
         return(
-            <View style={styles.dataContainer}>
-                <Text style={styles.dataHeader}>
-                    uSv/h
-                </Text>
+            <View style={styles.acpmContainer}>
+                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <Text style={styles.dataItemText}>
+                        {finalCurrentACPM}
+                    </Text>
 
-                <Text style={styles.dataItemText}>
-                    {currentuSv}
-                </Text>
+                    <Text style={styles.acpmText}>
+                        ACPM
+                    </Text>
+                </View>
+
+                <View style={styles.verticalLine}></View>
+
+                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <Text style={styles.dataItemText}>
+                        {finalCurrentuSv}
+                    </Text>
+
+                    <Text style={styles.acpmText}>
+                        uSv/h
+                    </Text>
+                </View>
             </View>
         )
     }
@@ -412,6 +427,18 @@ export class RealtimePanel extends React.Component{
             </View>
         )
     }
+    
+    renderSeperator = () =>{
+        return(
+            <View
+                style={{
+                    borderBottomColor: 'black',
+                    alignSelf: 'stretch',
+                    borderBottomWidth: StyleSheet.hairlineWidth,
+                }}
+            />
+        )
+    }
 
     render(){
         let {show} = this.state
@@ -427,6 +454,8 @@ export class RealtimePanel extends React.Component{
                 <View style = {styles.panelContainer}>
                     <View style={styles.modalMainContainer}>
                         {this.renderHeader()}
+
+
                         {this.renderModel()}
                         {this.renderTimer()}
                         {this.renderContent()}
@@ -456,7 +485,7 @@ var styles = StyleSheet.create({
     modalContentContainer:{
         height: deviceHeight,
         flex:1,
-        alignItems: 'center',
+        // alignItems: 'center',
         justifyContent: 'space-between',
         flexDirection: 'column',
         paddingTop: 0,
@@ -531,14 +560,52 @@ var styles = StyleSheet.create({
         justifyContent: 'center',
         flexDirection: 'column',
     },
+    cpmContainer:{
+        flex: 2,
+        margin: 15,
+        alignContent:'center',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+    },
+    acpmContainer:{
+        flex: 2,
+        margin: 15,
+        justifyContent: 'space-between',
+        flexDirection: 'row',
+    },
+    stationContainer:{
+
+    },
+    verticalLine:{
+        height: '100%',
+        width: 1,
+        backgroundColor: '#a7b7c9',
+    },
     dataHeader:{
         fontSize: 25,
         fontWeight: '400',
         color: "#000000",
     },
+    cpmText:{
+        fontSize: 25,
+        fontWeight: '400',
+        color: "#8b9bad",
+    },
+    acpmText:{
+        fontSize: 20,
+        fontWeight: '400',
+        color: "#8b9bad"
+    },
     dataItemText:{
         fontSize: 40,
         fontWeight: 'bold',
         color: "#193366",
+    },
+    safetyLevelImage:{
+        flex: 1,
+        contentFit: 'contain',
+        height: undefined,
+        width: deviceWidth * 0.8,
     },
 });

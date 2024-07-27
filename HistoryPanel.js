@@ -38,7 +38,7 @@ const DEFAULT_ENTRIES = [
 
 const ENTRY_HEADER = {
     "id": 0,
-    "date": "Date (UTC)              ",
+    "date": "Date                   ",
     "CPM": "CPM",
     "ACPM": "ACPM",
     "uSv": "uSv/h",
@@ -56,6 +56,7 @@ export class HistoryPanel extends React.Component{
         this.state = {
             show: false,
             currentRefreshState: "Retrieving Data...",
+            currentTimeZone: 0,
             listData: DEFAULT_ENTRIES,
         }
     }
@@ -75,6 +76,10 @@ export class HistoryPanel extends React.Component{
 
     updateRefreshState = (newState) =>{
         this.setState({currentRefreshState: newState})
+    }
+
+    updateTimeZone = (newState) =>{
+        this.setState({currentTimeZone: newState})
     }
 
     updateListData = (newState) => {
@@ -159,7 +164,7 @@ export class HistoryPanel extends React.Component{
     }
 
     dataHandler = async() =>{
-        const {currentRefreshState} = this.state;
+        const {currentRefreshState, currentTimeZone} = this.state;
         
         console.log(ENTRIES_PER_PAGE);
         console.log(currentRefreshState);
@@ -168,7 +173,7 @@ export class HistoryPanel extends React.Component{
 
         dataFlag = 1;
 
-        var queryString = "https://gmcmap.com/app/app_AJAX_getMarkerHistoryData.asp?geigerID=" + currentRefreshState + "&currentPage=" + currentPage + "&AmountPerPage=" + ENTRIES_PER_PAGE;
+        var queryString = "https://gmcmap.com/app/app_AJAX_getMarkerHistoryData.asp?geigerID=" + currentRefreshState + "&currentPage=" + currentPage + "&AmountPerPage=" + ENTRIES_PER_PAGE + "&timeZone=" + currentTimeZone;
         
         try{
             const response = await this.fetchWithTimeout(queryString, {timeout: QUERY_TIMEOUT});
