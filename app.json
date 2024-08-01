@@ -29,8 +29,8 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.northerb.gmcmapapp",
-      "config":{
-        "googleMaps":{
+      "config": {
+        "googleMaps": {
           "apiKey": "AIzaSyBdZ5Z3Gv1z8Tqdo3K379hZMpJ33SuWjf8"
         }
       },
@@ -44,6 +44,9 @@
         "projectId": "59906947-bf13-4a92-aab3-71d0a8d8e856"
       }
     },
-    "owner": "northerb"
+    "owner": "northerb",
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

@@ -133,8 +133,8 @@ export class SettingsPanel extends React.Component{
         return(
             <View style={{flexDirection: 'column', justifyContent: 'center', alignContent: 'center', alignItems: 'center'}}>
                 <Text style={styles.footerText}>Developed By: Vincent Zhang</Text>
-                <Text style={styles.footerText}>Copyright @ 2023 GQ Electronics LLC. All Rights Reserved.</Text>
-                <Text style={styles.footerText}>Current Build : v1.0.2</Text>
+                <Text style={styles.footerText}>Copyright @ 2023-2024 GQ Electronics LLC. All Rights Reserved.</Text>
+                <Text style={styles.footerText}>Current Build : v1.0.3</Text>
             </View>
         )
     }

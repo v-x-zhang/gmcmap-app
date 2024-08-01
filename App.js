@@ -36,6 +36,7 @@ import * as SecureStore from 'expo-secure-store';
 
 import { BottomPopup } from './BottomPopup';
 import { HistoryPanel } from './HistoryPanel';
+import { HistoryPanel_r } from './HistoryPanel_r';
 import { RealtimePanel } from './RealtimePanel';
 import { RealtimePanel_r } from './RealtimePanel_r';
 import { SettingsPanel } from './SettingsPanel';
@@ -53,9 +54,10 @@ const deviceWidth = Dimensions.get("window").width;
 
 const QUERY_TIMEOUT = 30000;
 
-const CURRENT_BUILD = "v1.0.2";
+const CURRENT_BUILD = "v1.0.3";
 
 var historyPanelRef;
+var historyPanelRef_r;
 var realtimePanelRef;
 var realtimePanelRef_r;
 var settingsPanelRef;
@@ -71,6 +73,7 @@ var currentMap = 1; //1 = GMC, 2 = Radon
 function App() {
   popupRef = React.createRef();
   historyPanelRef = React.createRef();
+  historyPanelRef_r = React.createRef();
   realtimePanelRef = React.createRef();
   realtimePanelRef_r = React.createRef();
   settingsPanelRef = React.createRef();
@@ -236,6 +239,10 @@ function App() {
     historyPanelRef.close();
   }
 
+  const onCloseHistory_r = () =>{
+    historyPanelRef_r.close();
+  }
+
   const refreshOnClick = () =>{
     Alert.alert(
       "Refresh Marker Data?", 
@@ -336,7 +343,7 @@ function App() {
       <View style={styles.mapContainer}>
         <MapView style={styles.map} clusterColor='#3383f2' extent = {256} minPoints={10} maxZoom={15} radius={deviceWidth * 0.08}
           region={initialRegion}
-          provider={PROVIDER_GOOGLE}
+          provider={MapView.PROVIDER_GOOGLE}
           onRegionChangeComplete={(e) => regionChangeCallback(e)}
           // onMapReady={() => setTimeout(() => setMapReady(true), 100)}
           >
@@ -381,6 +388,14 @@ function App() {
       >
 
       </HistoryPanel>
+
+      <HistoryPanel_r
+        ref={(target) => historyPanelRef_r = target}
+        onTouchOutside={onCloseHistory_r}
+        title="History Data"
+      >
+
+      </HistoryPanel_r>
 
       <RealtimePanel
         ref={(target) => realtimePanelRef = target}
@@ -695,31 +710,42 @@ function getMarkerButtons(markerDataItem, geigerID, currentTimeZone){
 
   // console.log(markerDataItem.historyData);
 
-  if(markerDataItem.historyData == "YES"){
-    const historyOnPress = () =>{
-      historyPanelRef.updateRefreshState(geigerID);
-      historyPanelRef.updateTimeZone(currentTimeZone);
-      historyPanelRef.show();
+  if(currentMap == 1){
+    if(markerDataItem.historyData == "YES"){
+      const historyOnPress = () =>{
+        historyPanelRef.updateRefreshState(geigerID);
+        historyPanelRef.updateTimeZone(currentTimeZone);
+        historyPanelRef.show();
+      }
+
+      buttons.push({text: 'History Data', onPress: () => historyOnPress()})
     }
 
-    buttons.push({text: 'History Data', onPress: () => historyOnPress()})
-  }
+    const realtimeOnPress = () =>{
+      realtimePanelRef.updateRefreshState(geigerID);
+      realtimePanelRef.updateModelState(markerDataItem.model);
+      realtimePanelRef.show();
+    }
 
-  const realtimeOnPress = () =>{
-    realtimePanelRef.updateRefreshState(geigerID);
-    realtimePanelRef.updateModelState(markerDataItem.model);
-    realtimePanelRef.show();
-  }
-
-  const realtimeOnPress_r = () =>{
-    realtimePanelRef_r.updateRefreshState(geigerID);
-    realtimePanelRef_r.updateModelState(markerDataItem.model);
-    realtimePanelRef_r.show();
-  }
-  
-  if(currentMap == 1){
     buttons.push({text: 'Real-Time Data', onPress: () => realtimeOnPress()})
+
   }else{
+    if(markerDataItem.historyData == "YES"){
+      const historyOnPress_r = () =>{
+        historyPanelRef_r.updateRefreshState(geigerID);
+        historyPanelRef_r.updateTimeZone(currentTimeZone);
+        historyPanelRef_r.show();
+      }
+  
+      buttons.push({text: 'History Data', onPress: () => historyOnPress_r()})
+    }
+  
+    const realtimeOnPress_r = () =>{
+      realtimePanelRef_r.updateRefreshState(geigerID);
+      realtimePanelRef_r.updateModelState(markerDataItem.model);
+      realtimePanelRef_r.show();
+    }
+
     buttons.push({text: 'Real-Time Data', onPress: () => realtimeOnPress_r()})
   }
 

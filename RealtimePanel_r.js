@@ -196,6 +196,7 @@ export class RealtimePanel_r extends React.Component{
                     "model": varArray[1],
                     "bq": varArray[2],
                     "author": varArray[3],
+                    "date": varArray[4],
                 }
 
                 tempMarkerData = markerData;
@@ -233,6 +234,7 @@ export class RealtimePanel_r extends React.Component{
                     "model": tempMarkerData.model,
                     "bq": tempMarkerData.bq,
                     "author": tempMarkerData.author,
+                    "date": tempMarkerData.date,
                     "pci": text2,
                 }
 
@@ -297,6 +299,8 @@ export class RealtimePanel_r extends React.Component{
         else{
             return (
                 <View style={styles.modalContentContainer}>
+                    {this.renderTime(currentData.date)}
+
                     {this.renderPCI(currentData.pci)}
 
                     {this.renderBQ(currentData.bq)}
@@ -307,6 +311,22 @@ export class RealtimePanel_r extends React.Component{
                 </View>
             )
         }
+    }
+
+    renderTime = (currentDate) => {
+        return(
+            <View style={styles.dataContainer}>
+                <Text style={styles.dataHeader}>
+                    Timestamp
+                </Text>
+
+                <Text 
+                    style={{color:"#193366", fontWeight:'bold', fontSize: 25}}
+                >
+                    {currentDate}
+                </Text>
+            </View>
+        )
     }
 
     renderPCI = (currentPCI) =>{
