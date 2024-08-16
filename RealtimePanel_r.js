@@ -321,7 +321,7 @@ export class RealtimePanel_r extends React.Component{
                 </Text>
 
                 <Text 
-                    style={{color:"#193366", fontWeight:'bold', fontSize: 25}}
+                    style={{color:"#193366", fontSize: 20}}
                 >
                     {currentDate}
                 </Text>

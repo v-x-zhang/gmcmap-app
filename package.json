@@ -1,6 +1,6 @@
 {
   "name": "gmcmap-app",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
@@ -11,7 +11,7 @@
   "dependencies": {
     "@expo/metro-runtime": "^3.2.1",
     "@react-native-async-storage/async-storage": "1.23.1",
-    "expo": "^51.0.22",
+    "expo": "^51.0.24",
     "expo-image": "~1.12.13",
     "expo-secure-store": "~13.0.2",
     "expo-status-bar": "~1.12.1",

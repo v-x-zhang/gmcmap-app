@@ -202,6 +202,7 @@ export class RealtimePanel extends React.Component{
                     "ACPM": varArray[2],
                     "uSv": varArray[3],
                     "author": varArray[4],
+                    "date": varArray[5],
                 }
 
                 tempMarkerData = markerData;
@@ -235,6 +236,7 @@ export class RealtimePanel extends React.Component{
 
             if(text2 != null){
                 let newMarkerData = {
+                    "date": tempMarkerData.date,
                     "brand": tempMarkerData.brand,
                     "model": tempMarkerData.model,
                     "ACPM": tempMarkerData.ACPM,
@@ -304,6 +306,11 @@ export class RealtimePanel extends React.Component{
         else{
             return (
                 <View style={styles.modalContentContainer}>
+
+                    {this.renderTime(currentData.date)}
+
+                    {this.renderSeperator()}
+
                     {this.renderCPM(currentData.CPM)}
                     
                     {this.renderSeperator()}
@@ -318,6 +325,22 @@ export class RealtimePanel extends React.Component{
                 </View>
             )
         }
+    }
+
+    renderTime = (currentDate) => {
+        return(
+            <View style={styles.dataContainer}>
+                <Text style={styles.dataHeader}>
+                    Timestamp
+                </Text>
+
+                <Text 
+                    style={{color:"#193366", fontSize: 20}}
+                >
+                    {currentDate}
+                </Text>
+            </View>
+        )
     }
 
     renderCPM = (currentCPM) =>{

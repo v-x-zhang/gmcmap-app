@@ -2,7 +2,7 @@
   "expo": {
     "name": "GMCMap",
     "slug": "gmcmap-app",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.gqelectronicsllc.gmcmap",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "config": {
         "googleMapsApiKey": "AIzaSyA4O-KfJrm2BNs-ax-c_Ve_LdlvJpnUF60",
         "usesNonExemptEncryption": false
@@ -34,7 +34,7 @@
           "apiKey": "AIzaSyBdZ5Z3Gv1z8Tqdo3K379hZMpJ33SuWjf8"
         }
       },
-      "versionCode": 3
+      "versionCode": 4
     },
     "web": {
       "favicon": "./assets/favicon.png"
