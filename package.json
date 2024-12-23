@@ -1,6 +1,6 @@
 {
   "name": "gmcmap-app",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
@@ -9,23 +9,23 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@expo/metro-runtime": "^3.2.1",
+    "@expo/metro-runtime": "~4.0.0",
     "@react-native-async-storage/async-storage": "1.23.1",
-    "expo": "^51.0.24",
-    "expo-image": "~1.12.13",
-    "expo-secure-store": "~13.0.2",
-    "expo-status-bar": "~1.12.1",
-    "expo-updates": "~0.25.21",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
+    "expo": "^52.0.21",
+    "expo-image": "~2.0.3",
+    "expo-secure-store": "~14.0.0",
+    "expo-status-bar": "~2.0.0",
+    "expo-updates": "~0.26.10",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "react-global-hook": "^2.0.0",
-    "react-native": "0.74.3",
+    "react-native": "0.76.5",
     "react-native-dropdown-select-list": "^2.0.5",
     "react-native-element-dropdown": "^2.10.0",
-    "react-native-gesture-handler": "~2.16.1",
+    "react-native-gesture-handler": "~2.20.2",
     "react-native-map-clustering": "^3.4.2",
-    "react-native-maps": "1.14.0",
-    "react-native-web": "~0.19.10"
+    "react-native-maps": "1.18.0",
+    "react-native-web": "~0.19.13"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

@@ -54,7 +54,7 @@ const deviceWidth = Dimensions.get("window").width;
 
 const QUERY_TIMEOUT = 30000;
 
-const CURRENT_BUILD = "v1.0.3";
+const CURRENT_BUILD = "v1.0.4";
 
 var historyPanelRef;
 var historyPanelRef_r;
